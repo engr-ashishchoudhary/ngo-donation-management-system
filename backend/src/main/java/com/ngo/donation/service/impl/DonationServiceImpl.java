@@ -118,9 +118,17 @@ public class DonationServiceImpl implements DonationService {
 
         DonationDetailsResponse details = results.get(0);
 
-        if (userRole != null && (userRole.equalsIgnoreCase("ROLE_DONOR") || userRole.equalsIgnoreCase("DONOR"))) {
-            if (authenticatedUserId != null && !details.getDonorId().equals(authenticatedUserId)) {
-                throw new ForbiddenException("Donors can only access their own donation details.");
+        if (userRole != null) {
+            String roleUpper = userRole.toUpperCase();
+            if (roleUpper.equals("ROLE_DONOR") || roleUpper.equals("DONOR")) {
+                if (authenticatedUserId == null || !details.getDonorId().equals(authenticatedUserId)) {
+                    throw new ForbiddenException("Donors can only access their own donation details.");
+                }
+            } else if (!roleUpper.equals("ROLE_ADMIN") && !roleUpper.equals("ADMIN")
+                    && !roleUpper.equals("ROLE_SUPER_ADMIN") && !roleUpper.equals("SUPER_ADMIN")
+                    && !roleUpper.equals("ROLE_CAMPAIGN_MANAGER") && !roleUpper.equals("CAMPAIGN_MANAGER")
+                    && !roleUpper.equals("ROLE_FINANCIAL_OFFICER") && !roleUpper.equals("FINANCIAL_OFFICER")) {
+                throw new ForbiddenException("Access denied: Insufficient permissions.");
             }
         }
 

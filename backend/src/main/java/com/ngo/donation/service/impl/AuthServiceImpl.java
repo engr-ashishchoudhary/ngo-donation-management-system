@@ -33,8 +33,8 @@ public class AuthServiceImpl implements AuthService {
     @Autowired
     public AuthServiceImpl(AdminRepository adminRepository,
                            DonorRepository donorRepository,
-                           @Autowired(required = false) PasswordEncoder passwordEncoder,
-                           @Autowired(required = false) JwtTokenProvider jwtTokenProvider) {
+                           PasswordEncoder passwordEncoder,
+                           JwtTokenProvider jwtTokenProvider) {
         this.adminRepository = adminRepository;
         this.donorRepository = donorRepository;
         this.passwordEncoder = passwordEncoder;
@@ -60,7 +60,7 @@ public class AuthServiceImpl implements AuthService {
         }
 
         AdminRole targetRole = request.getRole() != null ? request.getRole() : AdminRole.ADMIN;
-        String encodedPassword = passwordEncoder != null ? passwordEncoder.encode(request.getPassword()) : request.getPassword();
+        String encodedPassword = passwordEncoder.encode(request.getPassword());
 
         Admin admin = new Admin(request.getName(), request.getEmail(), encodedPassword, targetRole);
         Admin savedAdmin = adminRepository.save(admin);
@@ -85,13 +85,12 @@ public class AuthServiceImpl implements AuthService {
             throw new UnauthorizedException("Admin account is deactivated.");
         }
 
-        if (passwordEncoder != null && !passwordEncoder.matches(request.getPassword(), admin.getPasswordHash())) {
+        if (!passwordEncoder.matches(request.getPassword(), admin.getPasswordHash())) {
             throw new UnauthorizedException("Invalid email or password.");
         }
 
-        String token = jwtTokenProvider != null
-                ? jwtTokenProvider.generateToken(admin.getAdminId(), admin.getEmail(), admin.getRole().name())
-                : "";
+        String roleClaim = "ROLE_" + admin.getRole().name();
+        String token = jwtTokenProvider.generateToken(admin.getAdminId(), admin.getEmail(), roleClaim);
 
         return new AuthResponse(
                 token,
@@ -109,7 +108,7 @@ public class AuthServiceImpl implements AuthService {
             throw new ConflictException("Email is already registered: " + request.getEmail());
         }
 
-        String encodedPassword = passwordEncoder != null ? passwordEncoder.encode(request.getPassword()) : request.getPassword();
+        String encodedPassword = passwordEncoder.encode(request.getPassword());
 
         Donor donor = new Donor(
                 request.getName(),
@@ -141,13 +140,11 @@ public class AuthServiceImpl implements AuthService {
             throw new UnauthorizedException("Donor account is deactivated.");
         }
 
-        if (passwordEncoder != null && !passwordEncoder.matches(request.getPassword(), donor.getPasswordHash())) {
+        if (!passwordEncoder.matches(request.getPassword(), donor.getPasswordHash())) {
             throw new UnauthorizedException("Invalid email or password.");
         }
 
-        String token = jwtTokenProvider != null
-                ? jwtTokenProvider.generateToken(donor.getDonorId(), donor.getEmail(), "DONOR")
-                : "";
+        String token = jwtTokenProvider.generateToken(donor.getDonorId(), donor.getEmail(), "ROLE_DONOR");
 
         return new AuthResponse(
                 token,
