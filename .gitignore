@@ -47,3 +47,6 @@ Desktop.ini
 
 # Test / coverage output
 coverage/
+
+__pycache__/
+*.py[cod]
